@@ -37,7 +37,6 @@ runners:
 
 envs:
   env-x86_64-apple-tests: &env-x86_64-apple-tests
-    SCRIPT: ./x.py --stage 2 test --skip tests/ui --skip tests/rustdoc
     RUST_CONFIGURE_ARGS: --build=x86_64-apple-darwin --enable-sanitizers --enable-profiler --set rust.jemalloc
     RUSTC_RETRY_LINKER_ON_SEGFAULT: 1
     MACOSX_DEPLOYMENT_TARGET: 10.12
@@ -288,14 +287,29 @@ auto:
       NO_OVERFLOW_CHECKS: 1
     <<: *job-macos-xl
 
+  # Test macOS in two steps for more parallellism across the build
   - image: x86_64-apple-1
     env:
+      SCRIPT: ./x.py --stage 2 test --skip tests/ui --skip tests/rustdoc
       <<: *env-x86_64-apple-tests
     <<: *job-macos-xl
-
   - image: x86_64-apple-2
     env:
       SCRIPT: ./x.py --stage 2 test tests/ui tests/rustdoc
+      <<: *env-x86_64-apple-tests
+    <<: *job-macos-xl
+
+  # Test Mac Catalyst
+  - image: x86_64-apple-ios-macabi-1
+    env:
+      SCRIPT: ./x.py --stage 2 test --skip tests/ui --skip tests/rustdoc --host='' --target=x86_64-apple-ios-macabi
+      IPHONEOS_DEPLOYMENT_TARGET: 13.1
+      <<: *env-x86_64-apple-tests
+    <<: *job-macos-xl
+  - image: x86_64-apple-ios-macabi-2
+    env:
+      SCRIPT: ./x.py --stage 2 test tests/ui tests/rustdoc --host='' --target=x86_64-apple-ios-macabi
+      IPHONEOS_DEPLOYMENT_TARGET: 13.1
       <<: *env-x86_64-apple-tests
     <<: *job-macos-xl
 
