@@ -1357,7 +1357,7 @@ fn link_sanitizer_runtime(
         let path = find_sanitizer_runtime(sess, &filename);
         let rpath = path.to_str().expect("non-utf8 component in path");
         linker.link_args(&["-rpath", rpath]);
-        linker.link_dylib_by_name(&filename, false, true);
+        linker.link_dylib_by_name(&filename, false, true, false);
     } else if sess.target.is_like_msvc && flavor == LinkerFlavor::Msvc(Lld::No) && name == "asan" {
         // MSVC provides the `/INFERASANLIBS` argument to automatically find the
         // compatible ASAN library.
@@ -1543,6 +1543,7 @@ fn print_native_static_libs(
         .filter_map(|lib| {
             let name = lib.name;
             match lib.kind {
+                NativeLibKind::Dylib { weak: Some(true), .. } => Some(format!("-weak-l{name}")),
                 NativeLibKind::Static { bundle: Some(false), .. }
                 | NativeLibKind::Dylib { .. }
                 | NativeLibKind::Unspecified => {
@@ -1555,9 +1556,13 @@ fn print_native_static_libs(
                         Some(format!("-l{name}"))
                     }
                 }
-                NativeLibKind::Framework { .. } => {
-                    // ld-only syntax, since there are no frameworks in MSVC
-                    Some(format!("-framework {name}"))
+                // ld-only syntax, since there are no frameworks in MSVC.
+                NativeLibKind::Framework { weak, .. } => {
+                    if weak.unwrap_or(false) {
+                        Some(format!("-weak_framework {name}"))
+                    } else {
+                        Some(format!("-framework {name}"))
+                    }
                 }
                 // These are included, no need to print them
                 NativeLibKind::Static { bundle: None | Some(true), .. }
@@ -2638,9 +2643,14 @@ fn add_native_libs_from_crate(
                     }
                 }
             }
-            NativeLibKind::Dylib { as_needed } => {
+            NativeLibKind::Dylib { as_needed, weak } => {
                 if link_dynamic {
-                    cmd.link_dylib_by_name(name, verbatim, as_needed.unwrap_or(true))
+                    cmd.link_dylib_by_name(
+                        name,
+                        verbatim,
+                        as_needed.unwrap_or(true),
+                        weak.unwrap_or(false),
+                    )
                 }
             }
             NativeLibKind::Unspecified => {
@@ -2651,12 +2661,17 @@ fn add_native_libs_from_crate(
                         cmd.link_staticlib_by_name(name, verbatim, false);
                     }
                 } else if link_dynamic {
-                    cmd.link_dylib_by_name(name, verbatim, true);
+                    cmd.link_dylib_by_name(name, verbatim, true, false);
                 }
             }
-            NativeLibKind::Framework { as_needed } => {
+            NativeLibKind::Framework { as_needed, weak } => {
                 if link_dynamic {
-                    cmd.link_framework_by_name(name, verbatim, as_needed.unwrap_or(true))
+                    cmd.link_framework_by_name(
+                        name,
+                        verbatim,
+                        as_needed.unwrap_or(true),
+                        weak.unwrap_or(false),
+                    )
                 }
             }
             NativeLibKind::RawDylib => {
@@ -2963,7 +2978,7 @@ fn add_static_crate(
 
 // Same thing as above, but for dynamic crates instead of static crates.
 fn add_dynamic_crate(cmd: &mut dyn Linker, sess: &Session, cratepath: &Path) {
-    cmd.link_dylib_by_path(&rehome_lib_path(sess, cratepath), true);
+    cmd.link_dylib_by_path(&rehome_lib_path(sess, cratepath), true, false);
 }
 
 fn relevant_lib(sess: &Session, lib: &NativeLib) -> bool {

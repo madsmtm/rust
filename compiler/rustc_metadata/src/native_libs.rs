@@ -255,12 +255,12 @@ impl<'tcx> Collector<'tcx> {
                         let span = item.name_value_literal_span().unwrap();
                         let link_kind = match link_kind.as_str() {
                             "static" => NativeLibKind::Static { bundle: None, whole_archive: None },
-                            "dylib" => NativeLibKind::Dylib { as_needed: None },
+                            "dylib" => NativeLibKind::Dylib { as_needed: None, weak: None },
                             "framework" => {
                                 if !sess.target.is_like_osx {
                                     sess.dcx().emit_err(errors::LinkFrameworkApple { span });
                                 }
-                                NativeLibKind::Framework { as_needed: None }
+                                NativeLibKind::Framework { as_needed: None, weak: None }
                             }
                             "raw-dylib" => {
                                 if !sess.target.is_like_windows {
@@ -424,13 +424,25 @@ impl<'tcx> Collector<'tcx> {
                             sess.dcx().emit_err(errors::WholeArchiveNeedsStatic { span });
                         }
 
-                        ("as-needed", Some(NativeLibKind::Dylib { as_needed }))
-                        | ("as-needed", Some(NativeLibKind::Framework { as_needed })) => {
+                        ("as-needed", Some(NativeLibKind::Dylib { as_needed, .. }))
+                        | ("as-needed", Some(NativeLibKind::Framework { as_needed, .. })) => {
                             report_unstable_modifier!(native_link_modifiers_as_needed);
                             assign_modifier(as_needed)
                         }
                         ("as-needed", _) => {
                             sess.dcx().emit_err(errors::AsNeededCompatibility { span });
+                        }
+
+                        ("weak", Some(NativeLibKind::Dylib { weak, .. }))
+                        | ("weak", Some(NativeLibKind::Framework { weak, .. })) => {
+                            report_unstable_modifier!(native_link_modifiers_weak);
+                            if !sess.target.is_like_osx {
+                                sess.dcx().emit_err(errors::LinkWeakApple { span });
+                            }
+                            assign_modifier(weak)
+                        }
+                        ("weak", _) => {
+                            sess.dcx().emit_err(errors::WeakCompatibility { span });
                         }
 
                         _ => {
@@ -513,12 +525,19 @@ impl<'tcx> Collector<'tcx> {
         // First, check for errors
         let mut renames = FxHashSet::default();
         for lib in &self.tcx.sess.opts.libs {
+            // Cannot check these when parsing options because the target is not yet available.
             if let NativeLibKind::Framework { .. } = lib.kind
                 && !self.tcx.sess.target.is_like_osx
             {
-                // Cannot check this when parsing options because the target is not yet available.
                 self.tcx.dcx().emit_err(errors::LibFrameworkApple);
             }
+            if let NativeLibKind::Dylib { weak: Some(_), .. }
+            | NativeLibKind::Framework { weak: Some(_), .. } = lib.kind
+                && !self.tcx.sess.target.is_like_osx
+            {
+                self.tcx.dcx().emit_err(errors::LibWeakApple);
+            }
+
             if let Some(ref new_name) = lib.new_name {
                 let any_duplicate = self.libs.iter().any(|n| n.name.as_str() == lib.name);
                 if new_name.is_empty() {

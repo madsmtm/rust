@@ -120,7 +120,7 @@ metadata_install_missing_components =
     maybe you need to install the missing components with: `rustup component add rust-src rustc-dev llvm-tools-preview`
 
 metadata_invalid_link_modifier =
-    invalid linking modifier syntax, expected '+' or '-' prefix before one of: bundle, verbatim, whole-archive, as-needed
+    invalid linking modifier syntax, expected '+' or '-' prefix before one of: bundle, verbatim, whole-archive, as-needed, weak
 
 metadata_invalid_meta_files =
     found invalid metadata files for crate `{$crate_name}`{$add_info}
@@ -133,6 +133,9 @@ metadata_lib_framework_apple =
 
 metadata_lib_required =
     crate `{$crate_name}` required to be available in {$kind} format, but was not found in this form
+
+metadata_lib_weak_apple =
+    library modifier `weak` is only supported on Apple targets
 
 metadata_link_arg_unstable =
     link kind `link-arg` is unstable
@@ -164,6 +167,9 @@ metadata_link_ordinal_raw_dylib =
 metadata_link_requires_name =
     `#[link]` attribute requires a `name = "string"` argument
     .label = missing `name` argument
+
+metadata_link_weak_apple =
+    link modifier `weak` is only supported on Apple targets
 
 metadata_missing_native_library =
     could not find native static library `{$libname}`, perhaps an -L flag is missing?
@@ -282,7 +288,7 @@ metadata_unknown_link_kind =
     .label = unknown link kind
 
 metadata_unknown_link_modifier =
-    unknown linking modifier `{$modifier}`, expected one of: bundle, verbatim, whole-archive, as-needed
+    unknown linking modifier `{$modifier}`, expected one of: bundle, verbatim, whole-archive, as-needed, weak
 
 metadata_unsupported_abi =
     ABI not supported by `#[link(kind = "raw-dylib")]` on this architecture
@@ -292,6 +298,9 @@ metadata_unsupported_abi_i686 =
 
 metadata_wasm_import_form =
     wasm import module must be of the form `wasm_import_module = "string"`
+
+metadata_weak_compatibility =
+    linking modifier `weak` is only compatible with `dylib` and `framework` linking kinds
 
 metadata_whole_archive_needs_static =
     linking modifier `whole-archive` is only compatible with `static` linking kind

@@ -32,6 +32,9 @@ pub enum NativeLibKind {
     Dylib {
         /// Whether the dynamic library will be linked only if it satisfies some undefined symbols
         as_needed: Option<bool>,
+        /// Whether the dynamic library will be weakly linked, such that used symbols are only
+        /// resolved by `dyld` upon use. Useful for reducing startup time. Apple specific.
+        weak: Option<bool>,
     },
     /// Dynamic library (e.g. `foo.dll` on Windows) without a corresponding import library.
     RawDylib,
@@ -39,6 +42,9 @@ pub enum NativeLibKind {
     Framework {
         /// Whether the framework will be linked only if it satisfies some undefined symbols
         as_needed: Option<bool>,
+        /// Whether the framework will be weakly linked, such that used symbols are only resolved
+        /// by `dyld` upon use. Useful for reducing startup time. Apple specific.
+        weak: Option<bool>,
     },
     /// Argument which is passed to linker, relative order with libraries and other arguments
     /// is preserved
@@ -57,9 +63,8 @@ impl NativeLibKind {
             NativeLibKind::Static { bundle, whole_archive } => {
                 bundle.is_some() || whole_archive.is_some()
             }
-            NativeLibKind::Dylib { as_needed } | NativeLibKind::Framework { as_needed } => {
-                as_needed.is_some()
-            }
+            NativeLibKind::Dylib { as_needed, weak }
+            | NativeLibKind::Framework { as_needed, weak } => as_needed.is_some() || weak.is_some(),
             NativeLibKind::RawDylib
             | NativeLibKind::Unspecified
             | NativeLibKind::LinkArg

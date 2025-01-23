@@ -53,8 +53,8 @@ fn parse_native_lib(cx: &ParseNativeLibCx<'_>, value: &str) -> NativeLib {
 
     let kind = kind.map_or(NativeLibKind::Unspecified, |kind| match kind {
         "static" => NativeLibKind::Static { bundle: None, whole_archive: None },
-        "dylib" => NativeLibKind::Dylib { as_needed: None },
-        "framework" => NativeLibKind::Framework { as_needed: None },
+        "dylib" => NativeLibKind::Dylib { as_needed: None, weak: None },
+        "framework" => NativeLibKind::Framework { as_needed: None, weak: None },
         "link-arg" => {
             cx.on_unstable_value(
                 "library kind `link-arg` is unstable",
@@ -104,7 +104,7 @@ fn parse_and_apply_modifier(cx: &ParseNativeLibCx<'_>, modifier: &str, native_li
         Some(("-", m)) => (m, false),
         _ => cx.early_dcx.early_fatal(
             "invalid linking modifier syntax, expected '+' or '-' prefix \
-             before one of: bundle, verbatim, whole-archive, as-needed",
+             before one of: bundle, verbatim, whole-archive, as-needed, weak",
         ),
     };
 
@@ -133,8 +133,8 @@ fn parse_and_apply_modifier(cx: &ParseNativeLibCx<'_>, modifier: &str, native_li
             "linking modifier `whole-archive` is only compatible with `static` linking kind",
         ),
 
-        ("as-needed", NativeLibKind::Dylib { as_needed })
-        | ("as-needed", NativeLibKind::Framework { as_needed }) => {
+        ("as-needed", NativeLibKind::Dylib { as_needed, .. })
+        | ("as-needed", NativeLibKind::Framework { as_needed, .. }) => {
             cx.on_unstable_value(
                 "linking modifier `as-needed` is unstable",
                 ", the `-Z unstable-options` flag must also be passed to use it",
@@ -147,9 +147,23 @@ fn parse_and_apply_modifier(cx: &ParseNativeLibCx<'_>, modifier: &str, native_li
              `dylib` and `framework` linking kinds",
         ),
 
+        ("weak", NativeLibKind::Dylib { weak, .. })
+        | ("weak", NativeLibKind::Framework { weak, .. }) => {
+            cx.on_unstable_value(
+                "linking modifier `weak` is unstable",
+                ", the `-Z unstable-options` flag must also be passed to use it",
+                " and only accepted on the nightly compiler",
+            );
+            assign_modifier(weak)
+        }
+        ("weak", _) => early_dcx.early_fatal(
+            "linking modifier `weak` is only compatible with \
+             `dylib` and `framework` linking kinds",
+        ),
+
         _ => early_dcx.early_fatal(format!(
             "unknown linking modifier `{modifier}`, expected one \
-             of: bundle, verbatim, whole-archive, as-needed"
+             of: bundle, verbatim, whole-archive, as-needed, weak"
         )),
     }
 }

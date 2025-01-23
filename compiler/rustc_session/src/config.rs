@@ -1510,7 +1510,7 @@ pub fn rustc_optgroups() -> Vec<RustcOptGroup> {
                 library NAME. The optional KIND can be one of\n\
                 static, framework, or dylib (the default).\n\
                 Optional comma separated MODIFIERS\n\
-                (bundle|verbatim|whole-archive|as-needed)\n\
+                (bundle|verbatim|whole-archive|as-needed|weak)\n\
                 may be specified each with a prefix of either '+' to\n\
                 enable or '-' to disable.",
             "[KIND[:MODIFIERS]=]NAME[:RENAME]",

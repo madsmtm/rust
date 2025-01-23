@@ -147,6 +147,13 @@ pub struct LinkFrameworkApple {
 }
 
 #[derive(Diagnostic)]
+#[diag(metadata_link_weak_apple, code = E0455)]
+pub struct LinkWeakApple {
+    #[primary_span]
+    pub span: Span,
+}
+
+#[derive(Diagnostic)]
 #[diag(metadata_raw_dylib_only_windows, code = E0455)]
 pub struct RawDylibOnlyWindows {
     #[primary_span]
@@ -234,6 +241,13 @@ pub struct AsNeededCompatibility {
 }
 
 #[derive(Diagnostic)]
+#[diag(metadata_weak_compatibility)]
+pub struct WeakCompatibility {
+    #[primary_span]
+    pub span: Span,
+}
+
+#[derive(Diagnostic)]
 #[diag(metadata_unknown_link_modifier)]
 pub struct UnknownLinkModifier<'a> {
     #[primary_span]
@@ -273,6 +287,10 @@ pub struct LinkOrdinalRawDylib {
 #[derive(Diagnostic)]
 #[diag(metadata_lib_framework_apple)]
 pub struct LibFrameworkApple;
+
+#[derive(Diagnostic)]
+#[diag(metadata_lib_weak_apple)]
+pub struct LibWeakApple;
 
 #[derive(Diagnostic)]
 #[diag(metadata_empty_renaming_target)]

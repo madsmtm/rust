@@ -560,6 +560,8 @@ declare_features! (
     (unstable, naked_functions, "1.9.0", Some(90957)),
     /// Allows specifying the as-needed link modifier
     (unstable, native_link_modifiers_as_needed, "1.53.0", Some(81490)),
+    /// Allows specifying the weak link modifier.
+    (unstable, native_link_modifiers_weak, "CURRENT_RUSTC_VERSION", None),
     /// Allow negative trait implementations.
     (unstable, negative_impls, "1.44.0", Some(68318)),
     /// Allows the `!` pattern.

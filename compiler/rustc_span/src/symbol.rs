@@ -1337,6 +1337,7 @@ symbols! {
         native_link_modifiers_as_needed,
         native_link_modifiers_bundle,
         native_link_modifiers_verbatim,
+        native_link_modifiers_weak,
         native_link_modifiers_whole_archive,
         natvis_file,
         ne,

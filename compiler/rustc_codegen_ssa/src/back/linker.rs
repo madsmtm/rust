@@ -303,13 +303,19 @@ pub(crate) trait Linker {
         crate_type: CrateType,
         out_filename: &Path,
     );
-    fn link_dylib_by_name(&mut self, _name: &str, _verbatim: bool, _as_needed: bool) {
+    fn link_dylib_by_name(&mut self, _name: &str, _verbatim: bool, _as_needed: bool, _weak: bool) {
         bug!("dylib linked with unsupported linker")
     }
-    fn link_dylib_by_path(&mut self, _path: &Path, _as_needed: bool) {
+    fn link_dylib_by_path(&mut self, _path: &Path, _as_needed: bool, _weak: bool) {
         bug!("dylib linked with unsupported linker")
     }
-    fn link_framework_by_name(&mut self, _name: &str, _verbatim: bool, _as_needed: bool) {
+    fn link_framework_by_name(
+        &mut self,
+        _name: &str,
+        _verbatim: bool,
+        _as_needed: bool,
+        _weak: bool,
+    ) {
         bug!("framework linked with unsupported linker")
     }
     fn link_staticlib_by_name(&mut self, name: &str, verbatim: bool, whole_archive: bool);
@@ -569,7 +575,7 @@ impl<'a> Linker for GccLinker<'a> {
         }
     }
 
-    fn link_dylib_by_name(&mut self, name: &str, verbatim: bool, as_needed: bool) {
+    fn link_dylib_by_name(&mut self, name: &str, verbatim: bool, as_needed: bool, weak: bool) {
         if self.sess.target.os == "illumos" && name == "c" {
             // libc will be added via late_link_args on illumos so that it will
             // appear last in the library search order.
@@ -581,18 +587,27 @@ impl<'a> Linker for GccLinker<'a> {
         self.hint_dynamic();
         self.with_as_needed(as_needed, |this| {
             let colon = if verbatim && this.is_gnu { ":" } else { "" };
-            this.link_or_cc_arg(format!("-l{colon}{name}"));
+            if weak {
+                this.link_or_cc_arg(format!("-weak-l{colon}{name}"));
+            } else {
+                this.link_or_cc_arg(format!("-l{colon}{name}"));
+            }
         });
     }
 
-    fn link_dylib_by_path(&mut self, path: &Path, as_needed: bool) {
+    fn link_dylib_by_path(&mut self, path: &Path, as_needed: bool, weak: bool) {
         self.hint_dynamic();
         self.with_as_needed(as_needed, |this| {
-            this.link_or_cc_arg(path);
+            if weak {
+                this.link_or_cc_arg("-weak_library");
+                this.link_or_cc_arg(path);
+            } else {
+                this.link_or_cc_arg(path);
+            }
         })
     }
 
-    fn link_framework_by_name(&mut self, name: &str, _verbatim: bool, as_needed: bool) {
+    fn link_framework_by_name(&mut self, name: &str, _verbatim: bool, as_needed: bool, weak: bool) {
         self.hint_dynamic();
         if !as_needed {
             // FIXME(81490): ld64 as of macOS 11 supports the -needed_framework
@@ -600,7 +615,11 @@ impl<'a> Linker for GccLinker<'a> {
             // self.link_or_cc_arg("-needed_framework").link_or_cc_arg(name);
             self.sess.dcx().emit_warn(errors::Ld64UnimplementedModifier);
         }
-        self.link_or_cc_args(&["-framework", name]);
+        if weak {
+            self.link_or_cc_args(&["-weak_framework", name]);
+        } else {
+            self.link_or_cc_args(&["-framework", name]);
+        }
     }
 
     fn link_staticlib_by_name(&mut self, name: &str, verbatim: bool, whole_archive: bool) {
@@ -923,7 +942,7 @@ impl<'a> Linker for MsvcLinker<'a> {
         }
     }
 
-    fn link_dylib_by_name(&mut self, name: &str, verbatim: bool, _as_needed: bool) {
+    fn link_dylib_by_name(&mut self, name: &str, verbatim: bool, _as_needed: bool, _weak: bool) {
         // On MSVC-like targets rustc supports import libraries using alternative naming
         // scheme (`libfoo.a`) unsupported by linker, search for such libraries manually.
         if let Some(path) = try_find_native_dynamic_library(self.sess, name, verbatim) {
@@ -933,7 +952,7 @@ impl<'a> Linker for MsvcLinker<'a> {
         }
     }
 
-    fn link_dylib_by_path(&mut self, path: &Path, _as_needed: bool) {
+    fn link_dylib_by_path(&mut self, path: &Path, _as_needed: bool, _weak: bool) {
         // When producing a dll, MSVC linker may not emit an implib file if the dll doesn't export
         // any symbols, so we skip linking if the implib file is not present.
         let implib_path = path.with_extension("dll.lib");
@@ -1171,12 +1190,12 @@ impl<'a> Linker for EmLinker<'a> {
     ) {
     }
 
-    fn link_dylib_by_name(&mut self, name: &str, _verbatim: bool, _as_needed: bool) {
+    fn link_dylib_by_name(&mut self, name: &str, _verbatim: bool, _as_needed: bool, _weak: bool) {
         // Emscripten always links statically
         self.link_or_cc_args(&["-l", name]);
     }
 
-    fn link_dylib_by_path(&mut self, path: &Path, _as_needed: bool) {
+    fn link_dylib_by_path(&mut self, path: &Path, _as_needed: bool, _weak: bool) {
         self.link_or_cc_arg(path);
     }
 
@@ -1338,11 +1357,11 @@ impl<'a> Linker for WasmLd<'a> {
         }
     }
 
-    fn link_dylib_by_name(&mut self, name: &str, _verbatim: bool, _as_needed: bool) {
+    fn link_dylib_by_name(&mut self, name: &str, _verbatim: bool, _as_needed: bool, _weak: bool) {
         self.link_or_cc_args(&["-l", name]);
     }
 
-    fn link_dylib_by_path(&mut self, path: &Path, _as_needed: bool) {
+    fn link_dylib_by_path(&mut self, path: &Path, _as_needed: bool, _weak: bool) {
         self.link_or_cc_arg(path);
     }
 
@@ -1643,12 +1662,12 @@ impl<'a> Linker for AixLinker<'a> {
         }
     }
 
-    fn link_dylib_by_name(&mut self, name: &str, _verbatim: bool, _as_needed: bool) {
+    fn link_dylib_by_name(&mut self, name: &str, _verbatim: bool, _as_needed: bool, _weak: bool) {
         self.hint_dynamic();
         self.link_or_cc_arg(format!("-l{name}"));
     }
 
-    fn link_dylib_by_path(&mut self, path: &Path, _as_needed: bool) {
+    fn link_dylib_by_path(&mut self, path: &Path, _as_needed: bool, _weak: bool) {
         self.hint_dynamic();
         self.link_or_cc_arg(path);
     }

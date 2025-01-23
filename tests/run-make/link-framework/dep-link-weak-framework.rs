@@ -1,6 +1,5 @@
 #![crate_type = "rlib"]
-#![feature(link_arg_attribute)]
+#![feature(native_link_modifiers_weak)]
 
-#[link(name = "-weak_framework", kind = "link-arg", modifiers = "+verbatim")]
-#[link(name = "CoreFoundation", kind = "link-arg", modifiers = "+verbatim")]
+#[link(name = "CoreFoundation", kind = "framework", modifiers = "+weak")]
 extern "C" {}

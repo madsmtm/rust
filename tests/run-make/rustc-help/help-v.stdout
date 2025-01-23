@@ -14,7 +14,7 @@ Options:
                         library NAME. The optional KIND can be one of
                         static, framework, or dylib (the default).
                         Optional comma separated MODIFIERS
-                        (bundle|verbatim|whole-archive|as-needed)
+                        (bundle|verbatim|whole-archive|as-needed|weak)
                         may be specified each with a prefix of either '+' to
                         enable or '-' to disable.
         --crate-type [bin|lib|rlib|dylib|cdylib|staticlib|proc-macro]

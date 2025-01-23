@@ -118,19 +118,19 @@ error: wasm import module must be of the form `wasm_import_module = "string"`
 LL | #[link(name = "...", wasm_import_module())]
    |                      ^^^^^^^^^^^^^^^^^^^^
 
-error: invalid linking modifier syntax, expected '+' or '-' prefix before one of: bundle, verbatim, whole-archive, as-needed
+error: invalid linking modifier syntax, expected '+' or '-' prefix before one of: bundle, verbatim, whole-archive, as-needed, weak
   --> $DIR/link-attr-validation-late.rs:33:34
    |
 LL | #[link(name = "...", modifiers = "")]
    |                                  ^^
 
-error: invalid linking modifier syntax, expected '+' or '-' prefix before one of: bundle, verbatim, whole-archive, as-needed
+error: invalid linking modifier syntax, expected '+' or '-' prefix before one of: bundle, verbatim, whole-archive, as-needed, weak
   --> $DIR/link-attr-validation-late.rs:34:34
    |
 LL | #[link(name = "...", modifiers = "no-plus-minus")]
    |                                  ^^^^^^^^^^^^^^^
 
-error: unknown linking modifier `unknown`, expected one of: bundle, verbatim, whole-archive, as-needed
+error: unknown linking modifier `unknown`, expected one of: bundle, verbatim, whole-archive, as-needed, weak
   --> $DIR/link-attr-validation-late.rs:35:34
    |
 LL | #[link(name = "...", modifiers = "+unknown")]

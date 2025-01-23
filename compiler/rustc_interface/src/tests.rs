@@ -382,7 +382,7 @@ fn test_native_libs_tracking_hash_different_values() {
         NativeLib {
             name: String::from("b"),
             new_name: None,
-            kind: NativeLibKind::Framework { as_needed: None },
+            kind: NativeLibKind::Framework { as_needed: None, weak: None },
             verbatim: None,
         },
         NativeLib {
@@ -404,7 +404,7 @@ fn test_native_libs_tracking_hash_different_values() {
         NativeLib {
             name: String::from("X"),
             new_name: None,
-            kind: NativeLibKind::Framework { as_needed: None },
+            kind: NativeLibKind::Framework { as_needed: None, weak: None },
             verbatim: None,
         },
         NativeLib {
@@ -448,7 +448,7 @@ fn test_native_libs_tracking_hash_different_values() {
         NativeLib {
             name: String::from("b"),
             new_name: Some(String::from("X")),
-            kind: NativeLibKind::Framework { as_needed: None },
+            kind: NativeLibKind::Framework { as_needed: None, weak: None },
             verbatim: None,
         },
         NativeLib {
@@ -470,7 +470,7 @@ fn test_native_libs_tracking_hash_different_values() {
         NativeLib {
             name: String::from("b"),
             new_name: None,
-            kind: NativeLibKind::Framework { as_needed: None },
+            kind: NativeLibKind::Framework { as_needed: None, weak: None },
             verbatim: Some(true),
         },
         NativeLib {
@@ -504,7 +504,7 @@ fn test_native_libs_tracking_hash_different_order() {
         NativeLib {
             name: String::from("b"),
             new_name: None,
-            kind: NativeLibKind::Framework { as_needed: None },
+            kind: NativeLibKind::Framework { as_needed: None, weak: None },
             verbatim: None,
         },
         NativeLib {
@@ -519,7 +519,7 @@ fn test_native_libs_tracking_hash_different_order() {
         NativeLib {
             name: String::from("b"),
             new_name: None,
-            kind: NativeLibKind::Framework { as_needed: None },
+            kind: NativeLibKind::Framework { as_needed: None, weak: None },
             verbatim: None,
         },
         NativeLib {
@@ -552,7 +552,7 @@ fn test_native_libs_tracking_hash_different_order() {
         NativeLib {
             name: String::from("b"),
             new_name: None,
-            kind: NativeLibKind::Framework { as_needed: None },
+            kind: NativeLibKind::Framework { as_needed: None, weak: None },
             verbatim: None,
         },
     ];
